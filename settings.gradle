@@ -1,0 +1,21 @@
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            mavenContent { snapshotsOnly() }
+        }
+        mavenLocal()
+    }
+}
+rootProject.name = "eudi-lib-android-wallet-document-manager"
+include ':document-manager'
