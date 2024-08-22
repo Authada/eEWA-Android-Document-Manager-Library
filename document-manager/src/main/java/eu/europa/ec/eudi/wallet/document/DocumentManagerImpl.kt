@@ -35,6 +35,8 @@ import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea.*
 import com.android.identity.credential.Credential
 import com.android.identity.credential.CredentialStore
+import com.android.identity.securearea.SecureArea
+import com.android.identity.securearea.SecureArea.KeyLockedException
 import com.android.identity.securearea.SecureAreaRepository
 import com.android.identity.storage.StorageEngine
 import de.authada.eewa.wallet.PidLib
@@ -73,9 +75,18 @@ import java.util.*
 class DocumentManagerImpl(
     context: Context,
     private val storageEngine: StorageEngine,
-    private val secureArea: AndroidKeystoreSecureArea,
-    private val secureElementPidLib: PidLib?
+    private val secureArea: SecureArea,
+    private val secureElementPidLib: PidLib?,
+    private val createKeySettings: CreateKeySettings
 ) : DocumentManager {
+
+    fun interface CreateKeySettings {
+        operator fun invoke(
+            challenge: ByteArray,
+            strongBoxed: Boolean,
+            storeDocument: Boolean
+        ): SecureArea.CreateKeySettings
+    }
 
     private val context = context.applicationContext
     private val isDeviceSecure: Boolean
@@ -255,21 +266,19 @@ class DocumentManagerImpl(
                         docType = docType,
                         format = format,
                         credentialStore = credentialStore,
-                        nonEmptyChallenge = nonEmptyChallenge,
-                        strongBoxed = strongBoxed,
                         documentId = documentId,
-                        userAuth = userAuth,
-                        userAuthTimeoutInMillis = userAuthTimeoutInMillis,
-                        checkPublicKeyBeforeAdding = checkPublicKeyBeforeAdding
+                        checkPublicKeyBeforeAdding = checkPublicKeyBeforeAdding,
+                        keySettings = createKeySettings(nonEmptyChallenge, strongBoxed, true),
+                        hardwareBacked = hardwareBacked,
+                        requiresUserAuth = userAuth
                     )
                 } else {
                     ProxyIssuanceRequest(
                         docType = docType,
                         format = format,
-                        nonEmptyChallenge = nonEmptyChallenge,
-                        strongBoxed = strongBoxed,
-                        userAuth = userAuth,
-                        userAuthTimeoutInMillis = userAuthTimeoutInMillis,
+                        keySettings = createKeySettings(nonEmptyChallenge, strongBoxed, false),
+                        hardwareBacked = hardwareBacked,
+                        requiresUserAuth = userAuth,
                         secureArea = secureArea
                     )
                 }
@@ -290,32 +299,38 @@ class DocumentManagerImpl(
         CreateIssuanceRequestResult.Failure(e)
     }
 
-
     private val Credential.asDocument: Document?
         get() {
             if (this.pendingAuthenticationKeys.isNotEmpty()) return null
-
-            return Document(
-                id = name,
-                docType = applicationData.getString(AndroidCredentialIssuanceRequest.DOCUMENT_DOC_TYPE),
-                name = applicationData.getString(AndroidCredentialIssuanceRequest.DOCUMENT_NAME),
-                hardwareBacked = authenticationKeys.firstOrNull()?.alias?.let {
-                    credentialSecureArea.getKeyInfo(it).isHardwareBacked
-                } ?: false,
-                createdAt = Instant.ofEpochMilli(
-                    applicationData.getNumber(
-                        AndroidCredentialIssuanceRequest.DOCUMENT_CREATED_AT
-                    )
-                ),
-                requiresUserAuth = applicationData.getBoolean(AndroidCredentialIssuanceRequest.DOCUMENT_REQUIRES_USER_AUTH),
-                format = Format.valueOf(applicationData.getString(AndroidCredentialIssuanceRequest.DOCUMENT_FORMAT)),
-                nameSpacedData = nameSpacedData.nameSpaceNames.associateWith { nameSpace ->
-                    nameSpacedData.getDataElementNames(nameSpace)
-                        .associateWith { elementIdentifier ->
-                            nameSpacedData.getDataElement(nameSpace, elementIdentifier)
-                        }
-                },
-            )
+            return try {
+                Document(
+                    id = name,
+                    docType = applicationData.getString(AndroidCredentialIssuanceRequest.DOCUMENT_DOC_TYPE),
+                    name = applicationData.getString(AndroidCredentialIssuanceRequest.DOCUMENT_NAME),
+                    hardwareBacked = authenticationKeys.firstOrNull()?.alias?.let {
+                        credentialSecureArea.getKeyInfo(it).isHardwareBacked
+                    } ?: false,
+                    createdAt = Instant.ofEpochMilli(
+                        applicationData.getNumber(
+                            AndroidCredentialIssuanceRequest.DOCUMENT_CREATED_AT
+                        )
+                    ),
+                    requiresUserAuth = applicationData.getBoolean(AndroidCredentialIssuanceRequest.DOCUMENT_REQUIRES_USER_AUTH),
+                    format = Format.valueOf(
+                        applicationData.getString(
+                            AndroidCredentialIssuanceRequest.DOCUMENT_FORMAT
+                        )
+                    ),
+                    nameSpacedData = nameSpacedData.nameSpaceNames.associateWith { nameSpace ->
+                        nameSpacedData.getDataElementNames(nameSpace)
+                            .associateWith { elementIdentifier ->
+                                nameSpacedData.getDataElement(nameSpace, elementIdentifier)
+                            }
+                    },
+                )
+            } catch (e: KeyLockedException) {
+                null
+            }
         }
 
     private fun getSeDocument(documentId: String? = null): Document? {

@@ -36,6 +36,7 @@ import android.content.Context
 import androidx.biometric.BiometricPrompt.CryptoObject
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.storage.AndroidStorageEngine
+import com.android.identity.securearea.SecureArea
 import com.android.identity.storage.StorageEngine
 import de.authada.eewa.wallet.PidLib
 import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
@@ -121,6 +122,7 @@ interface DocumentManager {
         var userAuthTimeoutInMillis: Long = DocumentManagerImpl.AUTH_TIMEOUT
         var checkPublicKeyBeforeAdding: Boolean = true
         var secureElementPidLib: PidLib? = null
+        var secureArea: SecureArea? = null
 
         /**
          * Sets whether to encrypt the values stored on disk.
@@ -176,11 +178,20 @@ interface DocumentManager {
          *
          * @return [DocumentManager]
          */
-        fun build(): DocumentManager =
-            DocumentManagerImpl(_context, storageEngine, androidSecureArea, secureElementPidLib).apply {
+        fun build(): DocumentManager {
+            return DocumentManagerImpl(
+                _context,
+                storageEngine,
+                secureArea ?: androidSecureArea,
+                secureElementPidLib,
+                secureArea?.let {
+                    SecureElementCreateKeySettings()
+                }?: AndroidKeyStoreCreateKeySettings(this@Builder.userAuth, this@Builder.userAuthTimeoutInMillis)
+            ).apply {
                 userAuth(this@Builder.userAuth)
                 userAuthTimeout(this@Builder.userAuthTimeoutInMillis)
             }
+        }
 
         private val storageEngine: StorageEngine
             get() = AndroidStorageEngine.Builder(_context, storageDir)
