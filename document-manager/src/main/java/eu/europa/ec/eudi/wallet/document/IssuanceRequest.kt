@@ -16,9 +16,6 @@
 
 package eu.europa.ec.eudi.wallet.document
 
-import com.android.identity.android.securearea.AndroidKeystoreSecureArea
-import com.android.identity.credential.Credential
-import com.android.identity.securearea.SecureArea
 import java.security.PublicKey
 import java.security.cert.X509Certificate
 
@@ -27,7 +24,7 @@ import java.security.cert.X509Certificate
  * Use the [DocumentManager::createIssuanceRequest] method to create an issuance request.
  *
  * @property documentId document's unique identifier
- * @property docType document's docType (example: "eu.europa.ec.eudiw.pid.1")
+ * @property docType document's docType (example: "eu.europa.ec.eudi.pid.1")
  * @property name document's name
  * @property hardwareBacked whether the document's keys should be stored in hardware backed storage
  * @property requiresUserAuth whether the document requires user authentication to be accessed

@@ -17,6 +17,6 @@ androidJvm
 
 | | |
 |---|---|
-| docType | document's docType (example: &quot;eu.europa.ec.eudiw.pid.1&quot;) |
+| docType | document's docType (example: &quot;eu.europa.ec.eudi.pid.1&quot;) |
 | hardwareBacked | whether the document should be stored in hardware backed storage |
 | attestationChallenge | optional attestationChallenge to check provided by the issuer |

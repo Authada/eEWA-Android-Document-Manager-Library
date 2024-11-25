@@ -24,7 +24,7 @@ Issuance request class. Contains the necessary information to issue a document. 
 | Name | Summary |
 |---|---|
 | [certificatesNeedAuth](certificates-need-auth.md) | [androidJvm]<br>abstract val [certificatesNeedAuth](certificates-need-auth.md): [List](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)&lt;[X509Certificate](https://developer.android.com/reference/kotlin/java/security/cert/X509Certificate.html)&gt;<br>list of certificates that will be used for issuing the document |
-| [docType](doc-type.md) | [androidJvm]<br>abstract val [docType](doc-type.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>document's docType (example: &quot;eu.europa.ec.eudiw.pid.1&quot;) |
+| [docType](doc-type.md) | [androidJvm]<br>abstract val [docType](doc-type.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>document's docType (example: &quot;eu.europa.ec.eudi.pid.1&quot;) |
 | [documentId](document-id.md) | [androidJvm]<br>abstract val [documentId](document-id.md): [DocumentId](../index.md#659369697%2FClasslikes%2F1351694608)<br>document's unique identifier |
 | [hardwareBacked](hardware-backed.md) | [androidJvm]<br>abstract val [hardwareBacked](hardware-backed.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>whether the document's keys should be stored in hardware backed storage |
 | [name](name.md) | [androidJvm]<br>abstract var [name](name.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>document's name |

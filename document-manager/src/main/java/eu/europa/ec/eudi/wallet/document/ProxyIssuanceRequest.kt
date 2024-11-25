@@ -18,33 +18,26 @@ package eu.europa.ec.eudi.wallet.document
 
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.securearea.SecureArea
-import com.android.identity.util.Timestamp
-import java.time.Duration
-import java.time.Instant
+import java.security.cert.X509Certificate
 
 internal class ProxyIssuanceRequest(
     override val docType: String,
     override val format: Format,
-    nonEmptyChallenge: ByteArray,
-    strongBoxed: Boolean,
-    userAuth: Boolean,
-    userAuthTimeoutInMillis: Long,
+    keySettings: SecureArea.CreateKeySettings,
     private val secureArea: SecureArea,
+    override val hardwareBacked: Boolean,
+    override val requiresUserAuth: Boolean
 ) : IssuanceRequest {
     override val documentId: String = PROXY_KEY_ALIAS
-    private val keySettings = createKeySettings(
-        nonEmptyChallenge,
-        strongBoxed,
-        userAuth,
-        userAuthTimeoutInMillis
-    ).apply {
-        secureArea.deleteKey(PROXY_KEY_ALIAS)
-        secureArea.createKey(PROXY_KEY_ALIAS, this)
-    }
-    override val hardwareBacked = strongBoxed
     override var name = docType
-    override val requiresUserAuth = keySettings.userAuthenticationRequired
-    override val certificatesNeedAuth = secureArea.getKeyInfo(documentId).attestation
+    override val certificatesNeedAuth: MutableList<X509Certificate>
+
+    init {
+        secureArea.deleteKey(PROXY_KEY_ALIAS)
+        secureArea.createKey(PROXY_KEY_ALIAS, keySettings)
+        certificatesNeedAuth = secureArea.getKeyInfo(documentId).attestation
+    }
+
 
     override fun signWithAuthKey(
         data: ByteArray,
@@ -79,31 +72,7 @@ internal class ProxyIssuanceRequest(
         AddDocumentResult.Failure(e)
     }
 
-    private fun createKeySettings(
-        challenge: ByteArray,
-        hardwareBacked: Boolean,
-        userAuth: Boolean,
-        userAuthTimeoutInMillis: Long
-    ) = AndroidKeystoreSecureArea.CreateKeySettings.Builder(challenge)
-        .setEcCurve(SecureArea.EC_CURVE_P256)
-        .setUseStrongBox(hardwareBacked)
-        .setUserAuthenticationRequired(
-            userAuth,
-            userAuthTimeoutInMillis,
-            AUTH_TYPE
-        )
-        .setKeyPurposes(AndroidKeystoreSecureArea.KEY_PURPOSE_SIGN)
-        .setValidityPeriod(
-            Timestamp.now(),
-            //1 Hour validity for adhoc issuing
-            Timestamp.ofEpochMilli((Instant.now() + Duration.ofHours(1)).toEpochMilli())
-        )
-        .build()
-
     companion object {
-        private const val AUTH_TYPE =
-            AndroidKeystoreSecureArea.USER_AUTHENTICATION_TYPE_BIOMETRIC or AndroidKeystoreSecureArea.USER_AUTHENTICATION_TYPE_LSKF
-
         private const val PROXY_KEY_ALIAS = "PROXY_CREDENTIAL_ISSUANCE"
     }
 }

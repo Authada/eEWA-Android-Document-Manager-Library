@@ -36,9 +36,13 @@ import android.content.Context
 import androidx.biometric.BiometricPrompt.CryptoObject
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.android.storage.AndroidStorageEngine
+import com.android.identity.securearea.SecureArea
 import com.android.identity.storage.StorageEngine
 import de.authada.eewa.wallet.PidLib
 import eu.europa.ec.eudi.wallet.document.internal.isDeviceSecure
+import eu.europa.ec.eudi.wallet.document.room.DocumentMetaData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import java.io.File
 
 /**
@@ -55,7 +59,13 @@ interface DocumentManager {
      *
      * @return list of documents
      */
-    fun getDocuments(): List<Document>
+    fun getDocumentsSynchronous(): List<Document>
+
+
+    /**
+     * MetaData retrieval happens asynchronously, therefore the function is suspended
+     */
+    suspend fun getDocumentsWithMetaData(): List<Document>
 
     /**
      * Get document by id
@@ -71,13 +81,13 @@ interface DocumentManager {
      * @param documentId document's unique identifier
      * @return [DeleteDocumentResult.Success] containing the proof of deletion if successful, [DeleteDocumentResult.Failure] otherwise
      */
-    fun deleteDocumentById(documentId: DocumentId): DeleteDocumentResult
+    suspend fun deleteDocumentById(documentId: DocumentId): DeleteDocumentResult
 
     /**
      * Create an issuance request for a given docType. The issuance request can be then used to issue the document
      * from the issuer. The issuance request contains the certificate that must be sent to the issuer.
      *
-     * @param docType document's docType (example: "eu.europa.ec.eudiw.pid.1")
+     * @param docType document's docType (example: "eu.europa.ec.eudi.pid.1")
      * @param hardwareBacked whether the document should be stored in hardware backed storage
      * @param attestationChallenge optional attestationChallenge to check provided by the issuer
      * @return [CreateIssuanceRequestResult.Success] containing the issuance request if successful, [CreateIssuanceRequestResult.Failure] otherwise
@@ -90,6 +100,8 @@ interface DocumentManager {
         storeDocument: Boolean = true
     ): CreateIssuanceRequestResult
 
+
+    suspend fun storeMetaDataForCredential(documentMetaData: DocumentMetaData)
 
     /**
      * Builder class to instantiate the default DocumentManager implementation.
@@ -118,9 +130,11 @@ interface DocumentManager {
         var useEncryption: Boolean = true
         var storageDir: File = _context.noBackupFilesDir
         var userAuth: Boolean = context.isDeviceSecure
+        var coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
         var userAuthTimeoutInMillis: Long = DocumentManagerImpl.AUTH_TIMEOUT
         var checkPublicKeyBeforeAdding: Boolean = true
         var secureElementPidLib: PidLib? = null
+        var secureArea: ((StorageEngine) -> SecureArea)? = null
 
         /**
          * Sets whether to encrypt the values stored on disk.
@@ -177,7 +191,13 @@ interface DocumentManager {
          * @return [DocumentManager]
          */
         fun build(): DocumentManager =
-            DocumentManagerImpl(_context, storageEngine, androidSecureArea, secureElementPidLib).apply {
+            DocumentManagerImpl(
+                context = _context,
+                storageEngine = storageEngine,
+                secureArea = secureArea?.invoke(storageEngine) ?: androidSecureArea,
+                secureElementPidLib = secureElementPidLib,
+                coroutineScope = coroutineScope
+            ).apply {
                 userAuth(this@Builder.userAuth)
                 userAuthTimeout(this@Builder.userAuthTimeoutInMillis)
             }

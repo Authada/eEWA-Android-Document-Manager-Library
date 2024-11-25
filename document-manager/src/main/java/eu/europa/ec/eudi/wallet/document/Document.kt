@@ -32,13 +32,14 @@
 
 package eu.europa.ec.eudi.wallet.document
 
+import eu.europa.ec.eudi.wallet.document.room.DocumentMetaData
 import java.time.Instant
 
 /**
  * Data class that represents a document.
  *
  * @property id document's unique identifier
- * @property docType document's docType (example: "eu.europa.ec.eudiw.pid.1")
+ * @property docType document's docType (example: "eu.europa.ec.eudi.pid.1")
  * @property name document's name. This is a human readable name.
  * @property hardwareBacked document's storage is hardware backed
  * @property createdAt document's creation date
@@ -48,12 +49,13 @@ import java.time.Instant
  *
  * @constructor Creates a document
  * @param id document's unique identifier
- * @param docType document's docType (example: "eu.europa.ec.eudiw.pid.1")
+ * @param docType document's docType (example: "eu.europa.ec.eudi.pid.1")
  * @param name document's name. This is a human readable name.
  * @param hardwareBacked document's storage is hardware backed
  * @param createdAt document's creation date
  * @param requiresUserAuth flag that indicates if the document requires user authentication to be accessed
  * @param nameSpacedData retrieves the document's data, grouped by nameSpace. Values are in CBOR bytes
+ * @param metaData information regarding styling of the document
  */
 data class Document(
     val id: DocumentId,
@@ -64,6 +66,7 @@ data class Document(
     val createdAt: Instant,
     val requiresUserAuth: Boolean,
     val nameSpacedData: Map<NameSpace, Map<ElementIdentifier, ByteArray>>,
+    val metaData: DocumentMetaData?
 ) {
     val nameSpaces: Map<NameSpace, List<ElementIdentifier>>
         get() = nameSpacedData.mapValues { it.value.keys.toList() }

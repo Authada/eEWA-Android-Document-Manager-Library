@@ -6,7 +6,6 @@ import com.github.jk1.license.render.InventoryMarkdownReportRenderer
 plugins {
     alias libs.plugins.android.library
     alias libs.plugins.kotlin.android
-    id 'kotlin-kapt'
     id 'kotlin-parcelize'
     alias libs.plugins.dokka
     alias libs.plugins.dependency.license.report
@@ -14,6 +13,7 @@ plugins {
     alias libs.plugins.dependencycheck
     alias libs.plugins.sonarqube
     alias libs.plugins.maven.publish
+    alias libs.plugins.ksp
 }
 
 apply from: 'jacoco.gradle'
@@ -71,24 +71,33 @@ dependencies {
     implementation (libs.android.identity.credential) {
         exclude group: "org.bouncycastle"
     }
-    implementation libs.eewa.pid.lib
-    implementation libs.eudi.lib.jvm.sdjwt.kt
+    implementation(libs.eewa.pid.lib)
+    implementation(libs.eudi.lib.jvm.sdjwt.kt)
 
-    implementation libs.biometric.ktx
+    implementation(libs.biometric.ktx)
+
+    implementation(libs.room.ktx)
+    implementation(libs.room.runtime)
+    annotationProcessor(libs.room.compiler)
+    ksp(libs.room.compiler)
 
     // CBOR
-    implementation libs.cbor
-    implementation libs.cose
+    implementation(libs.cbor)
+    implementation(libs.cose)
 
-    implementation libs.bouncy.castle.prov
-    implementation libs.bouncy.castle.pkix
+    implementation(libs.bouncy.castle.prov)
+    implementation(libs.bouncy.castle.pkix)
 
-    testImplementation libs.junit
-    testImplementation libs.mockk
-    testImplementation libs.json
+    testImplementation(libs.kotlinx.coroutines.test)
 
-    androidTestImplementation libs.android.junit
-    androidTestImplementation libs.espresso.core
+
+    testImplementation(libs.json)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+
+    androidTestImplementation(libs.android.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }
 
 dependencyCheck {

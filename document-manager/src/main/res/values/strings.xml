@@ -85,4 +85,8 @@
     <string name="family_name_national_character">Family name in national characters</string>
     <string name="given_name_national_character">Given name in national characters</string>
     <string name="signature_usual_mark">Signature / usual mark</string>
+
+    <!-- email strings -->
+    <string name="iat">@string/issuance_date</string>
+    <string name="exp">@string/expiry_date</string>
 </resources>

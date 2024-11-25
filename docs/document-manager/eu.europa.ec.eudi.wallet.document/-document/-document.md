@@ -14,7 +14,7 @@ androidJvm
 | | |
 |---|---|
 | id | document's unique identifier |
-| docType | document's docType (example: &quot;eu.europa.ec.eudiw.pid.1&quot;) |
+| docType | document's docType (example: &quot;eu.europa.ec.eudi.pid.1&quot;) |
 | name | document's name. This is a human readable name. |
 | hardwareBacked | document's storage is hardware backed |
 | createdAt | document's creation date |

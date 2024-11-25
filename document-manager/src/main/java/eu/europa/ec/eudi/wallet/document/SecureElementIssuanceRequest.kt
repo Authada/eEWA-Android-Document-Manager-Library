@@ -31,6 +31,7 @@ internal class SecureElementIssuanceRequest(
     private val secureElementPidLib: PidLib,
     private val storageEngine: StorageEngine
 ) : IssuanceRequest {
+    private val keyId = secureElementPidLib.createKeyPair()
     override val format: Format = Format.SE_TLV
     override val hardwareBacked = true
     override var name = docType
@@ -39,19 +40,19 @@ internal class SecureElementIssuanceRequest(
 
     override val documentId: String = "$SE_ID_PREFIX$documentId"
     override val publicKey: PublicKey
-        get() = secureElementPidLib.getDevicePublicKey()
+        get() = secureElementPidLib.getPublicKey(keyId)
 
     override fun signWithAuthKey(
         data: ByteArray,
         @Algorithm alg: String
     ): SignedWithAuthKeyResult = try {
-        SignedWithAuthKeyResult.Success(secureElementPidLib.signWithDevKey(data))
+        SignedWithAuthKeyResult.Success(secureElementPidLib.signWithKey(keyId, data))
     } catch (e: Exception) {
         SignedWithAuthKeyResult.Failure(e)
     }
 
     override fun storeCredential(data: ByteArray): AddDocumentResult = try {
-        val credentialHandle = secureElementPidLib.storePersonalData(data)
+        val credentialHandle = secureElementPidLib.storePersonalData(keyId, data)
 
         val credentialMap = storageEngine.getSeStoredCredentialMap().toMutableMap()
         credentialMap.clear()
@@ -78,7 +79,6 @@ fun StorageEngine.getSeStoredCredentialMap(): Map<String, ByteArray> {
     }
 }
 
-@Suppress("UNCHECKED_CAST")
 fun StorageEngine.storeSeStoredCredentialMap(map: Map<String, ByteArray>) {
     val encoder = Base64.getEncoder()
     val stringMap = map.mapValues {

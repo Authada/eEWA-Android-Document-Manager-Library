@@ -65,6 +65,7 @@ class TestDocumentExtensions {
                     "element1" to CBORObject.FromObject(arrayOf(1,"string", byteArrayOf(0x01, 0x02, 0x03))).EncodeToBytes(),
                 )
             ),
+            metaData = null
         )
 
         val json = document.nameSpacedDataJSONObject

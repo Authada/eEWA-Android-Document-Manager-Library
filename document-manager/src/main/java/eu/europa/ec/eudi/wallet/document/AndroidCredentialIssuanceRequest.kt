@@ -50,21 +50,17 @@ internal class AndroidCredentialIssuanceRequest(
     override val docType: String,
     override val format: Format,
     credentialStore: CredentialStore,
-    nonEmptyChallenge: ByteArray,
-    strongBoxed: Boolean,
     documentId: String,
-    private val userAuth: Boolean,
-    private val userAuthTimeoutInMillis: Long,
-    private val checkPublicKeyBeforeAdding: Boolean
+    private val checkPublicKeyBeforeAdding: Boolean,
+    keySettings: SecureArea.CreateKeySettings,
+    override val hardwareBacked: Boolean,
+    override val requiresUserAuth: Boolean
 ) : IssuanceRequest {
-    private val keySettings = createKeySettings(nonEmptyChallenge, strongBoxed)
     private val credential = credentialStore.createCredential(documentId, keySettings)
 
     private val pendingAuthKey = credential.createPendingAuthenticationKey(keySettings, null)
     override val documentId = credential.name
-    override val hardwareBacked = keySettings.useStrongBox
     override var name = docType
-    override val requiresUserAuth = keySettings.userAuthenticationRequired
     override val certificatesNeedAuth = pendingAuthKey.attestation
 
     override fun signWithAuthKey(
@@ -135,7 +131,7 @@ internal class AndroidCredentialIssuanceRequest(
                     setString(DOCUMENT_FORMAT, Format.MSO_MDOC.name)
                     setBoolean(
                         DOCUMENT_REQUIRES_USER_AUTH,
-                        userAuth
+                        requiresUserAuth
                     )
                 }
 
@@ -183,7 +179,7 @@ internal class AndroidCredentialIssuanceRequest(
                     setString(DOCUMENT_DOC_TYPE, type)
                     setBoolean(
                         DOCUMENT_REQUIRES_USER_AUTH,
-                        userAuth
+                        requiresUserAuth
                     )
                 }
                 credential.pendingAuthenticationKeys.forEach { key ->
@@ -234,31 +230,15 @@ internal class AndroidCredentialIssuanceRequest(
         return claimPairs
     }
 
-    private fun createKeySettings(
-        challenge: ByteArray,
-        hardwareBacked: Boolean,
-    ) = AndroidKeystoreSecureArea.CreateKeySettings.Builder(challenge)
-        .setEcCurve(SecureArea.EC_CURVE_P256)
-        .setUseStrongBox(hardwareBacked)
-        .setUserAuthenticationRequired(
-            userAuth, userAuthTimeoutInMillis,
-            AUTH_TYPE
-        )
-        .setKeyPurposes(AndroidKeystoreSecureArea.KEY_PURPOSE_SIGN)
-        .build()
-
 
     companion object {
         private const val TAG = "AndroidCredentialIssuanceRequest"
-        private const val AUTH_TYPE =
-            AndroidKeystoreSecureArea.USER_AUTHENTICATION_TYPE_BIOMETRIC or AndroidKeystoreSecureArea.USER_AUTHENTICATION_TYPE_LSKF
 
         const val DOCUMENT_DOC_TYPE = "docType"
         const val DOCUMENT_NAME = "name"
         const val DOCUMENT_CREATED_AT = "createdAt"
         const val DOCUMENT_REQUIRES_USER_AUTH = "requiresUserAuth"
         const val DOCUMENT_FORMAT = "format"
-
     }
 }
 

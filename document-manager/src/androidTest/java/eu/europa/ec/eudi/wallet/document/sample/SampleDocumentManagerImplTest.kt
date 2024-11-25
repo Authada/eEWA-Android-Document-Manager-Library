@@ -53,6 +53,9 @@ import eu.europa.ec.eudi.wallet.document.Document
 import eu.europa.ec.eudi.wallet.document.DocumentManager
 import eu.europa.ec.eudi.wallet.document.DocumentManagerImpl
 import eu.europa.ec.eudi.wallet.document.test.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.*
 import org.junit.Assert.*
 import org.junit.runner.RunWith
@@ -77,6 +80,7 @@ class SampleDocumentManagerImplTest {
             Base64.getDecoder().decode(raw.readBytes())
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup() {
         storageEngine = AndroidStorageEngine.Builder(context, context.cacheDir)
@@ -87,7 +91,13 @@ class SampleDocumentManagerImplTest {
             }
         secureArea = AndroidKeystoreSecureArea(context, storageEngine)
 
-        delegate = DocumentManagerImpl(context, storageEngine, secureArea)
+        delegate = DocumentManagerImpl(
+            context = context,
+            storageEngine = storageEngine,
+            secureArea = secureArea,
+            coroutineScope = CoroutineScope(UnconfinedTestDispatcher()),
+            secureElementPidLib = null
+        )
             .userAuth(false)
 
         documentManager = SampleDocumentManagerImpl(context, delegate)
@@ -101,9 +111,9 @@ class SampleDocumentManagerImplTest {
     @Test
     fun test_loadSampleData() {
         documentManager.loadSampleData(sampleData)
-        val documents = documentManager.getDocuments()
+        val documents = documentManager.getDocumentsSynchronous()
         assertEquals(2, documents.size)
-        assertEquals("eu.europa.ec.eudiw.pid.1", documents[0].docType)
+        assertEquals("eu.europa.ec.eudi.pid.1", documents[0].docType)
         assertEquals("org.iso.18013.5.1.mDL", documents[1].docType)
     }
 
@@ -111,7 +121,7 @@ class SampleDocumentManagerImplTest {
     @Throws(KeyLockedException::class)
     fun test_sampleDocuments() {
         documentManager.loadSampleData(sampleData)
-        val documents = documentManager.getDocuments()
+        val documents = documentManager.getDocumentsSynchronous()
         assertEquals(2, documents.size)
         for (document in documents) {
             val dataElements = document.nameSpaces.flatMap { (nameSpace, elementIdentifiers) ->

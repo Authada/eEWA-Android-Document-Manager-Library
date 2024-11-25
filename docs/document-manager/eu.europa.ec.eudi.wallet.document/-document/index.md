@@ -13,7 +13,7 @@ androidJvm
 | | |
 |---|---|
 | id | document's unique identifier |
-| docType | document's docType (example: &quot;eu.europa.ec.eudiw.pid.1&quot;) |
+| docType | document's docType (example: &quot;eu.europa.ec.eudi.pid.1&quot;) |
 | name | document's name. This is a human readable name. |
 | hardwareBacked | document's storage is hardware backed |
 | createdAt | document's creation date |
@@ -31,7 +31,7 @@ androidJvm
 | Name | Summary |
 |---|---|
 | [createdAt](created-at.md) | [androidJvm]<br>val [createdAt](created-at.md): [Instant](https://developer.android.com/reference/kotlin/java/time/Instant.html)<br>document's creation date |
-| [docType](doc-type.md) | [androidJvm]<br>val [docType](doc-type.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>document's docType (example: &quot;eu.europa.ec.eudiw.pid.1&quot;) |
+| [docType](doc-type.md) | [androidJvm]<br>val [docType](doc-type.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>document's docType (example: &quot;eu.europa.ec.eudi.pid.1&quot;) |
 | [hardwareBacked](hardware-backed.md) | [androidJvm]<br>val [hardwareBacked](hardware-backed.md): [Boolean](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)<br>document's storage is hardware backed |
 | [id](id.md) | [androidJvm]<br>val [id](id.md): [DocumentId](../index.md#659369697%2FClasslikes%2F1351694608)<br>document's unique identifier |
 | [name](name.md) | [androidJvm]<br>val [name](name.md): [String](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)<br>document's name. This is a human readable name. |

@@ -37,7 +37,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.identity.android.securearea.AndroidKeystoreSecureArea
 import com.android.identity.storage.EphemeralStorageEngine
 import com.android.identity.storage.StorageEngine
-import eu.europa.ec.eudi.wallet.document.test.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.bouncycastle.util.encoders.Hex
 import org.junit.*
 import org.junit.Assert.*
@@ -46,10 +48,10 @@ import java.io.IOException
 import java.security.Signature
 import java.util.*
 import kotlin.random.Random
+import eu.europa.ec.eudi.wallet.document.test.R
 
 @RunWith(AndroidJUnit4::class)
 class DocumentManagerImplTest {
-
 
     private val context: Context
         get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -57,6 +59,7 @@ class DocumentManagerImplTest {
     private lateinit var storageEngine: StorageEngine
     private lateinit var documentManager: DocumentManagerImpl
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     @Throws(IOException::class)
     fun setUp() {
@@ -66,7 +69,13 @@ class DocumentManagerImplTest {
                 deleteAll()
             }
         secureArea = AndroidKeystoreSecureArea(context, storageEngine)
-        documentManager = DocumentManagerImpl(context, storageEngine, secureArea)
+        documentManager = DocumentManagerImpl(
+            context = context,
+            storageEngine = storageEngine,
+            secureArea = secureArea,
+            secureElementPidLib = null,
+            coroutineScope = CoroutineScope(UnconfinedTestDispatcher())
+        )
             .userAuth(false)
     }
 
@@ -77,7 +86,7 @@ class DocumentManagerImplTest {
 
     @Test
     fun test_getDocuments_returns_empty_list() {
-        val documents = documentManager.getDocuments()
+        val documents = documentManager.getDocumentsSynchronous()
         assertTrue(documents.isEmpty())
     }
 
@@ -90,8 +99,8 @@ class DocumentManagerImplTest {
 
     @Test
     fun test_createIssuanceRequest() {
-        val docType = "eu.europa.ec.eudiw.pid.1"
-        val requestResult = documentManager.createIssuanceRequest(docType, false)
+        val docType = "eu.europa.ec.eudi.pid.1"
+        val requestResult = documentManager.createIssuanceRequest(docType, format = Format.MSO_MDOC, false)
         assertTrue(requestResult is CreateIssuanceRequestResult.Success)
 
         val request = (requestResult as CreateIssuanceRequestResult.Success).issuanceRequest
@@ -110,7 +119,7 @@ class DocumentManagerImplTest {
         val document = documentManager.getDocumentById(documentId)
         assertNull(document)
 
-        val documents = documentManager.getDocuments()
+        val documents = documentManager.getDocumentsSynchronous()
         assertTrue(documents.isEmpty())
 
         val data = Random.nextBytes(32)
@@ -131,30 +140,29 @@ class DocumentManagerImplTest {
 
     @Test
     fun test_addDocument() {
-        val docType = "eu.europa.ec.eudiw.pid.1"
+        val docType = "eu.europa.ec.eudi.pid.1"
         val data = context.resources.openRawResource(R.raw.eu_pid).use { raw ->
             Hex.decode(raw.readBytes())
         }
 
         documentManager.checkPublicKeyBeforeAdding(false)
-        val issuanceRequest = documentManager.createIssuanceRequest(docType, false)
-            .getOrThrow()
-        val result = documentManager.addDocument(issuanceRequest, data)
+        val issuanceRequest = documentManager.createIssuanceRequest(docType, format = Format.MSO_MDOC, false).getOrThrow()
+        val result = issuanceRequest.storeCredential(data)
         assertTrue(result is AddDocumentResult.Success)
         assertEquals(issuanceRequest.documentId, (result as AddDocumentResult.Success).documentId)
     }
 
     @Test
     fun test_checkPublicKeyInMso() {
-        val docType = "eu.europa.ec.eudiw.pid.1"
+        val docType = "eu.europa.ec.eudi.pid.1"
         // some random data with mismatching public key
         val data = context.resources.openRawResource(R.raw.eu_pid).use { raw ->
             Hex.decode(raw.readBytes())
         }
         documentManager.checkPublicKeyBeforeAdding(true)
-        val issuanceRequest = documentManager.createIssuanceRequest(docType, false)
+        val issuanceRequest = documentManager.createIssuanceRequest(docType, format = Format.MSO_MDOC, false)
             .getOrThrow()
-        val result = documentManager.addDocument(issuanceRequest, data)
+        val result = issuanceRequest.storeCredential(data)
         assertTrue(result is AddDocumentResult.Failure)
         result as AddDocumentResult.Failure
         assertTrue(result.throwable is IllegalArgumentException)

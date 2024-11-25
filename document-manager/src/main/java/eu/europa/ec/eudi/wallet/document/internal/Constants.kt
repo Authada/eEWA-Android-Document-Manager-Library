@@ -37,10 +37,14 @@ import eu.europa.ec.eudi.wallet.document.R
 
 // EU PID
 @get:JvmSynthetic
-internal const val EU_PID_DOCTYPE = "eu.europa.ec.eudiw.pid.1"
+internal const val EU_PID_DOCTYPE = "eu.europa.ec.eudi.pid.1"
+
+// German SD-JWT PID
+@get:JvmSynthetic
+internal const val GERMAN_SDJWT_PID_DOCTYPE = "https://metadata-8c062a.usercontent.opencode.de/pid.json"
 
 @get:JvmSynthetic
-internal const val EU_PID_NAMESPACE = "eu.europa.ec.eudiw.pid.1"
+internal const val EU_PID_NAMESPACE = "eu.europa.ec.eudi.pid.1"
 
 
 // mDL
